@@ -1,0 +1,18 @@
+# Local config (contains secrets)
+config/config.php
+
+# Composer
+/vendor/
+composer.lock
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+
+# PHPUnit
+.phpunit.result.cache

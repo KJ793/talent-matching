@@ -1,0 +1,17 @@
+/* Basic placeholder styles — to be expanded as features are added. */
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0;
+    color: #222;
+    background: #f7f7f8;
+}
+header {
+    background: #1f2937;
+    color: white;
+    padding: 1rem 2rem;
+}
+main {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
