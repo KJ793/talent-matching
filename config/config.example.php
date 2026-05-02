@@ -5,4 +5,10 @@
 return [
     'app_name' => 'Intelligent Talent Matching Platform',
     'debug'    => true,
+
+    // Database
+    'db_host' => 'localhost',
+    'db_name' => 'talent_matching',
+    'db_user' => 'root',
+    'db_pass' => '',
 ];
