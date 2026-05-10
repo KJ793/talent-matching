@@ -22,6 +22,8 @@ $role     = Session::role();
             <span>Logged in as <?= htmlspecialchars($role) ?></span>
             <?php if ($role === 'candidate'): ?>
                 <a href="candidate/dashboard.php">Dashboard</a>
+            <?php elseif ($role === 'employer'): ?>
+                <a href="employer/dashboard.php">Dashboard</a>
             <?php endif; ?>
             <a href="logout.php">Log out</a>
         <?php else: ?>
@@ -34,7 +36,7 @@ $role     = Session::role();
     <?php if (!$loggedIn): ?>
         <p>Welcome. Please <a href="login.php">log in</a> or <a href="register.php">register</a> to get started.</p>
     <?php else: ?>
-        <p>You are logged in. Use the dashboard to manage your profile.</p>
+        <p>You are logged in. Use the dashboard to manage your account.</p>
     <?php endif; ?>
 </main>
 </body>
