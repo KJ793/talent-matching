@@ -1,4 +1,4 @@
-/* Basic placeholder styles — to be expanded as features are added. */
+/* Basic placeholder styles â€” to be expanded as features are added. */
 body {
     font-family: system-ui, -apple-system, sans-serif;
     margin: 0;
@@ -30,7 +30,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    max-width: 360px;
+    max-width: 480px;
 }
 .auth-form label {
     display: flex;
@@ -39,11 +39,13 @@ main {
     color: #444;
 }
 .auth-form input,
-.auth-form select {
+.auth-form select,
+.auth-form textarea {
     padding: 0.5rem;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 1rem;
+    font-family: inherit;
 }
 .auth-form button {
     padding: 0.6rem;
@@ -62,3 +64,46 @@ main {
     padding: 0.6rem 1rem;
     border-radius: 4px;
 }
+
+/* Lists */
+.job-list, .dash, .candidate-list {
+    list-style: none;
+    padding: 0;
+}
+.job-list li, .candidate-list li {
+    background: white;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+}
+.dash li {
+    margin-bottom: 0.4rem;
+}
+
+/* Search */
+.search-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.search-form input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.search-form button {
+    padding: 0.5rem 1rem;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.muted { color: #666; font-size: 0.9rem; }
+
+/* Profile */
+dl.profile dt { font-weight: bold; margin-top: 0.6rem; }
+dl.profile dd { margin: 0 0 0.4rem 0; }
