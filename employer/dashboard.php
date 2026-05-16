@@ -48,6 +48,7 @@ $jobs     = JobRepository::listByEmployer($userId);
     <?php endif; ?>
 
     <p><a href="../employer/post_job.php">+ Post a new job</a></p>
+    <p><a href="../employer/search_candidates.php">Search candidates</a></p>
 </main>
 </body>
 </html>

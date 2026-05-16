@@ -44,4 +44,27 @@ class CandidateRepository
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($payload);
     }
+
+    public static function listAll(): array
+    {
+        $stmt = Database::connection()->query(
+            'SELECT c.*, u.email
+             FROM candidates c LEFT JOIN users u ON u.id = c.user_id
+             ORDER BY c.years_experience DESC'
+        );
+        return $stmt->fetchAll();
+    }
+
+    public static function searchByKeyword(string $keyword): array
+    {
+        $like = '%' . $keyword . '%';
+        $stmt = Database::connection()->prepare(
+            'SELECT c.*, u.email
+             FROM candidates c LEFT JOIN users u ON u.id = c.user_id
+             WHERE c.full_name LIKE ? OR c.field_of_study LIKE ?
+             ORDER BY c.years_experience DESC'
+        );
+        $stmt->execute([$like, $like]);
+        return $stmt->fetchAll();
+    }
 }
