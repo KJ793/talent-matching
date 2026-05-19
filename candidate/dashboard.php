@@ -30,6 +30,8 @@ $profile = CandidateRepository::findByUserId(Session::userId());
     <ul class="dash">
         <li><a href="../candidate/profile.php">View my profile</a></li>
         <li><a href="../candidate/edit_profile.php">Edit my profile</a></li>
+        <li><a href="../jobs.php">Browse all jobs</a></li>
+        <li><a href="../candidate/recommendations.php">Recommended jobs</a></li>
     </ul>
 </main>
 </body>

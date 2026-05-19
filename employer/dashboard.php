@@ -31,6 +31,12 @@ $jobs     = JobRepository::listByEmployer($userId);
 <main>
     <h2><?= $employer ? htmlspecialchars($employer['company_name']) : 'Welcome' ?></h2>
 
+    <ul class="dash">
+        <li><a href="../employer/post_job.php">+ Post a new job</a></li>
+        <li><a href="../candidates.php">Browse candidates</a></li>
+        <li><a href="../employer/recommendations.php">Recommended candidates</a></li>
+    </ul>
+
     <h3>My job postings</h3>
     <?php if (empty($jobs)): ?>
         <p>You haven't posted any jobs yet.</p>
@@ -46,9 +52,6 @@ $jobs     = JobRepository::listByEmployer($userId);
             <?php endforeach; ?>
         </ul>
     <?php endif; ?>
-
-    <p><a href="../employer/post_job.php">+ Post a new job</a></p>
-    <p><a href="../employer/search_candidates.php">Search candidates</a></p>
 </main>
 </body>
 </html>
