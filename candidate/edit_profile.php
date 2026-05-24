@@ -21,6 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+
+$workModes = ['Any', 'Remote', 'On-site', 'Hybrid'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -38,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
 
     <form method="POST" class="auth-form">
+        <h3>Basic information</h3>
         <label>Full name
             <input name="full_name" required value="<?= htmlspecialchars($profile['full_name'] ?? '') ?>">
         </label>
@@ -53,6 +56,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label>Years of experience
             <input type="number" name="years_experience" min="0" value="<?= (int)($profile['years_experience'] ?? 0) ?>">
         </label>
+
+        <h3>Skills &amp; experience</h3>
+        <label>Skills (comma separated)
+            <input name="skills" value="<?= htmlspecialchars($profile['skills'] ?? '') ?>"
+                   placeholder="e.g. PHP, JavaScript, SQL, Docker">
+        </label>
+        <label>Work experience
+            <textarea name="work_experience" rows="4" placeholder="Briefly describe your work history..."><?= htmlspecialchars($profile['work_experience'] ?? '') ?></textarea>
+        </label>
+
+        <h3>Preferences</h3>
+        <label>Preferred work mode
+            <select name="preferred_work_mode">
+                <?php foreach ($workModes as $mode): ?>
+                    <option value="<?= $mode ?>" <?= ($profile['preferred_work_mode'] ?? 'Any') === $mode ? 'selected' : '' ?>><?= $mode ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>Preferred location
+            <input name="preferred_location" value="<?= htmlspecialchars($profile['preferred_location'] ?? '') ?>"
+                   placeholder="e.g. Sydney">
+        </label>
+
         <button type="submit">Save</button>
     </form>
 </main>

@@ -31,11 +31,15 @@ $profile = CandidateRepository::findByUserId(Session::userId());
         <p><a href="edit_profile.php">Create profile</a></p>
     <?php else: ?>
         <dl class="profile">
-            <dt>Full name</dt>      <dd><?= htmlspecialchars($profile['full_name']) ?></dd>
-            <dt>Contact</dt>        <dd><?= htmlspecialchars($profile['contact']) ?></dd>
-            <dt>Education</dt>      <dd><?= htmlspecialchars($profile['education']) ?></dd>
-            <dt>Field of study</dt> <dd><?= htmlspecialchars($profile['field_of_study']) ?></dd>
+            <dt>Full name</dt>           <dd><?= htmlspecialchars($profile['full_name']) ?></dd>
+            <dt>Contact</dt>             <dd><?= htmlspecialchars($profile['contact']) ?></dd>
+            <dt>Education</dt>           <dd><?= htmlspecialchars($profile['education']) ?></dd>
+            <dt>Field of study</dt>      <dd><?= htmlspecialchars($profile['field_of_study']) ?></dd>
             <dt>Years of experience</dt> <dd><?= (int)$profile['years_experience'] ?></dd>
+            <dt>Skills</dt>              <dd><?= htmlspecialchars($profile['skills'] ?? '') ?></dd>
+            <dt>Work experience</dt>     <dd><?= nl2br(htmlspecialchars($profile['work_experience'] ?? '')) ?></dd>
+            <dt>Preferred work mode</dt> <dd><?= htmlspecialchars($profile['preferred_work_mode'] ?? 'Any') ?></dd>
+            <dt>Preferred location</dt>  <dd><?= htmlspecialchars($profile['preferred_location'] ?? '') ?></dd>
         </dl>
         <p><a href="edit_profile.php">Edit profile</a></p>
     <?php endif; ?>
