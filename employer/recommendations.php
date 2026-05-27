@@ -4,11 +4,14 @@ require_once __DIR__ . '/../bootstrap.php';
 use App\Auth;
 use App\Recommender;
 use App\Session;
+use App\UserRepository;
 
 Session::start();
 Auth::requireLogin('employer');
 
-$results = Recommender::candidatesForEmployer(Session::userId());
+$userId    = Session::userId();
+$results   = Recommender::candidatesForEmployer($userId);
+$isPremium = UserRepository::isPremium($userId);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +29,12 @@ $results = Recommender::candidatesForEmployer(Session::userId());
     </nav>
 </header>
 <main>
-    <p class="muted">Top matches across your active job postings (up to <?= Recommender::TOP_K ?>).</p>
+    <?php if ($isPremium): ?>
+        <p class="muted">Showing all <?= count($results) ?> matches (premium membership — unlimited).</p>
+    <?php else: ?>
+        <p class="muted">Showing your top <?= min(count($results), Recommender::TOP_K) ?> matches.
+            <a href="../membership.php">Upgrade to premium</a> for unlimited recommendations.</p>
+    <?php endif; ?>
 
     <?php if (empty($results)): ?>
         <p>No candidate matches yet. Make sure you have at least one active job posting.</p>

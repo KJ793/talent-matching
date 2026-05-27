@@ -3,22 +3,15 @@ namespace App;
 
 /**
  * Rule-based recommendation engine.
- * Phase 1: works only with the basic profile fields available so far.
- *   - Field-of-study/required-skills overlap
- *   - Years of experience proximity
- *   - Education level match
- * Always returns at most 10 results (TOP_K = 10) per the original spec.
  *
- * In Phase 2 this will be extended to consider skills, work mode preference
- * and preferred location, and the cap will become membership-aware.
+ * Phase 2: scoring extended to use the new candidate profile fields
+ * (skills, preferred work mode, preferred location). The hard cap of 10
+ * still applies to free users, but premium users see all matches.
  */
 class Recommender
 {
     public const TOP_K = 10;
 
-    /**
-     * Recommend jobs for a candidate.
-     */
     public static function jobsForCandidate(int $candidateUserId): array
     {
         $candidate = CandidateRepository::findByUserId($candidateUserId);
@@ -36,12 +29,12 @@ class Recommender
         }
 
         usort($scored, fn($a, $b) => $b['score'] <=> $a['score']);
-        return array_slice($scored, 0, self::TOP_K);
+
+        return UserRepository::isPremium($candidateUserId)
+            ? $scored
+            : array_slice($scored, 0, self::TOP_K);
     }
 
-    /**
-     * Recommend candidates for an employer's job postings.
-     */
     public static function candidatesForEmployer(int $employerUserId): array
     {
         $jobs = JobRepository::listByEmployer($employerUserId);
@@ -52,7 +45,6 @@ class Recommender
         $candidates = CandidateRepository::listAll();
         $scored = [];
         foreach ($candidates as $candidate) {
-            // Score against the best-matching job posting.
             $best = 0;
             foreach ($jobs as $job) {
                 $s = self::scoreJobForCandidate($job, $candidate);
@@ -64,38 +56,71 @@ class Recommender
         }
 
         usort($scored, fn($a, $b) => $b['score'] <=> $a['score']);
-        return array_slice($scored, 0, self::TOP_K);
+
+        return UserRepository::isPremium($employerUserId)
+            ? $scored
+            : array_slice($scored, 0, self::TOP_K);
     }
 
     /**
-     * Internal scoring function — sums weighted partial scores.
+     * Scoring extended in Phase 2 to use skills, preferred work mode and location.
      */
-    protected static function scoreJobForCandidate(array $job, array $candidate): int
+    public static function scoreJobForCandidate(array $job, array $candidate): int
     {
         $score = 0;
 
-        // 1. Field-of-study vs required_skills / job description (token overlap, +5 per match)
+        // 1. Skills overlap (most important — up to 20 points)
+        $candidateSkills = self::tokenize($candidate['skills'] ?? '');
+        $requiredSkills  = self::tokenize($job['required_skills'] ?? '');
+        if (!empty($candidateSkills) && !empty($requiredSkills)) {
+            $overlap = array_intersect($candidateSkills, $requiredSkills);
+            $score += min(20, count($overlap) * 5);
+        }
+
+        // 2. Field-of-study mentioned in description / required skills
         $candidateField = strtolower($candidate['field_of_study'] ?? '');
         $haystack = strtolower(($job['required_skills'] ?? '') . ' ' . ($job['description'] ?? ''));
         if ($candidateField && str_contains($haystack, $candidateField)) {
             $score += 10;
         }
 
-        // 2. Education match (+5)
+        // 3. Education match
         if (!empty($candidate['education']) && !empty($job['required_education'])) {
             if (strcasecmp($candidate['education'], $job['required_education']) === 0) {
                 $score += 5;
             }
         }
 
-        // 3. Years of experience proximity
+        // 4. Years of experience proximity
         $candYears = (int)($candidate['years_experience'] ?? 0);
         $jobYears  = (int)($job['years_experience'] ?? 0);
         $diff = abs($candYears - $jobYears);
-        if ($diff === 0) $score += 8;
-        elseif ($diff <= 2) $score += 4;
-        elseif ($diff <= 4) $score += 1;
+        if      ($diff === 0) $score += 8;
+        elseif  ($diff <= 2)  $score += 4;
+        elseif  ($diff <= 4)  $score += 1;
+
+        // 5. Preferred work mode
+        $pref = $candidate['preferred_work_mode'] ?? 'Any';
+        if ($pref !== 'Any' && strcasecmp($pref, $job['work_mode'] ?? '') === 0) {
+            $score += 6;
+        }
+
+        // 6. Preferred location
+        if (!empty($candidate['preferred_location']) && !empty($job['location'])) {
+            if (strcasecmp($candidate['preferred_location'], $job['location']) === 0) {
+                $score += 6;
+            }
+        }
 
         return $score;
+    }
+
+    /**
+     * Lowercase, trim, split on commas / semicolons / whitespace.
+     */
+    protected static function tokenize(string $text): array
+    {
+        $parts = preg_split('/[\s,;]+/', strtolower(trim($text))) ?: [];
+        return array_values(array_filter($parts, fn($p) => $p !== ''));
     }
 }

@@ -4,11 +4,14 @@ require_once __DIR__ . '/../bootstrap.php';
 use App\Auth;
 use App\Recommender;
 use App\Session;
+use App\UserRepository;
 
 Session::start();
 Auth::requireLogin('candidate');
 
-$results = Recommender::jobsForCandidate(Session::userId());
+$userId    = Session::userId();
+$results   = Recommender::jobsForCandidate($userId);
+$isPremium = UserRepository::isPremium($userId);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +29,12 @@ $results = Recommender::jobsForCandidate(Session::userId());
     </nav>
 </header>
 <main>
-    <p class="muted">Top matches based on your profile (up to <?= Recommender::TOP_K ?>).</p>
+    <?php if ($isPremium): ?>
+        <p class="muted">Showing all <?= count($results) ?> matches (premium membership — unlimited).</p>
+    <?php else: ?>
+        <p class="muted">Showing your top <?= min(count($results), Recommender::TOP_K) ?> matches.
+            <a href="../membership.php">Upgrade to premium</a> for unlimited recommendations.</p>
+    <?php endif; ?>
 
     <?php if (empty($results)): ?>
         <p>No matches yet. Try completing your profile.</p>
