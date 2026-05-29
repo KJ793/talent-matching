@@ -84,5 +84,65 @@ class CandidateRepository
         $stmt->execute([$like, $like, $like, $like, $like, $like]);
         return $stmt->fetchAll();
     }
-}
+
+    /**
+     * Phase 2 search: structured filters in SQL, fuzzy keyword in PHP.
+     *
+     * $params keys (all optional):
+     *   keyword            free-text, fuzzy-matched against name + field_of_study + skills + work_experience
+     *   education          exact match on candidates.education
+     *   work_mode          exact match on candidates.preferred_work_mode (also accepts 'Any')
+     *   preferred_location exact match on candidates.preferred_location
+     *   min_experience     candidates.years_experience >= this many
+     */
+    public static function search(array $params): array
+    {
+        $sql = 'SELECT c.*, u.email FROM candidates c
+                JOIN users u ON u.id = c.user_id
+                WHERE 1 = 1';
+        $args = [];
+
+        if (!empty($params['education'])) {
+            $sql   .= ' AND c.education = ?';
+            $args[] = $params['education'];
+        }
+        if (!empty($params['work_mode'])) {
+            $sql   .= ' AND (c.preferred_work_mode = ? OR c.preferred_work_mode = ?)';
+            $args[] = $params['work_mode'];
+            $args[] = 'Any';
+        }
+        if (!empty($params['preferred_location'])) {
+            $sql   .= ' AND c.preferred_location = ?';
+            $args[] = $params['preferred_location'];
+        }
+        if (isset($params['min_experience']) && $params['min_experience'] !== '') {
+            $sql   .= ' AND c.years_experience >= ?';
+            $args[] = (int) $params['min_experience'];
+        }
+        $sql .= ' ORDER BY c.full_name';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($args);
+        $rows = $stmt->fetchAll();
+
+        $keyword = trim((string) ($params['keyword'] ?? ''));
+        if ($keyword === '') {
+            return $rows;
+        }
+
+        $scored = [];
+        foreach ($rows as $row) {
+            $haystack = ($row['full_name'] ?? '') . ' '
+                      . ($row['field_of_study'] ?? '') . ' '
+                      . ($row['skills'] ?? '') . ' '
+                      . ($row['work_experience'] ?? '');
+            if (!Fuzzy::matches($haystack, $keyword)) {
+                continue;
+            }
+            $scored[] = ['row' => $row, 'score' => Fuzzy::score($haystack, $keyword)];
+        }
+
+        usort($scored, static fn ($a, $b) => $b['score'] <=> $a['score']);
+        return array_map(static fn ($s) => $s['row'], $scored);
+    }
 }

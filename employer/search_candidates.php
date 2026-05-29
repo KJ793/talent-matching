@@ -8,8 +8,18 @@ use App\Session;
 Session::start();
 Auth::requireLogin('employer');
 
-$keyword    = trim($_GET['q'] ?? '');
-$candidates = $keyword === '' ? CandidateRepository::listAll() : CandidateRepository::searchByKeyword($keyword);
+$params = [
+    'keyword'            => trim($_GET['q'] ?? ''),
+    'education'          => trim($_GET['education'] ?? ''),
+    'work_mode'          => trim($_GET['work_mode'] ?? ''),
+    'preferred_location' => trim($_GET['location'] ?? ''),
+    'min_experience'     => trim($_GET['min_experience'] ?? ''),
+];
+
+$hasFilters = array_filter($params, static fn ($v) => $v !== '');
+$candidates = $hasFilters ? CandidateRepository::search($params) : CandidateRepository::listAll();
+
+$workModes  = ['Remote', 'On-site', 'Hybrid'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,12 +39,30 @@ $candidates = $keyword === '' ? CandidateRepository::listAll() : CandidateReposi
 </header>
 <main>
     <form method="GET" class="search-form">
-        <input name="q" placeholder="Search by name or field of study..." value="<?= htmlspecialchars($keyword) ?>">
+        <input name="q" placeholder="Keyword (name, skills, experience)..."
+               value="<?= htmlspecialchars($params['keyword']) ?>">
+        <input name="education" placeholder="Education level"
+               value="<?= htmlspecialchars($params['education']) ?>">
+        <select name="work_mode">
+            <option value="">Any work mode</option>
+            <?php foreach ($workModes as $mode): ?>
+                <option value="<?= $mode ?>" <?= $params['work_mode'] === $mode ? 'selected' : '' ?>>
+                    <?= $mode ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <input name="location" placeholder="Preferred location"
+               value="<?= htmlspecialchars($params['preferred_location']) ?>">
+        <input name="min_experience" type="number" min="0" placeholder="Min years experience"
+               value="<?= htmlspecialchars($params['min_experience']) ?>">
         <button type="submit">Search</button>
+        <?php if ($hasFilters): ?>
+            <a href="search_candidates.php">Clear</a>
+        <?php endif; ?>
     </form>
 
     <?php if (empty($candidates)): ?>
-        <p>No candidates found<?= $keyword ? ' for "' . htmlspecialchars($keyword) . '"' : '' ?>.</p>
+        <p>No candidates match those filters.</p>
     <?php else: ?>
         <ul class="job-list">
             <?php foreach ($candidates as $candidate): ?>

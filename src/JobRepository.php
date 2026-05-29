@@ -85,7 +85,7 @@ class JobRepository
 
     /**
      * Phase 1 keyword search: original spec only requires searching the
-     * job description. Future iterations will broaden this.
+     * job description. Kept for backwards compatibility with older callers.
      */
     public static function searchByKeyword(string $keyword): array
     {
@@ -98,5 +98,65 @@ class JobRepository
         );
         $stmt->execute([$like]);
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Phase 2 search: structured filters in SQL, fuzzy keyword in PHP.
+     *
+     * $params keys (all optional):
+     *   keyword            free-text, fuzzy-matched against title + description + required_skills
+     *   work_mode          exact match on jobs.work_mode (Remote|On-site|Hybrid)
+     *   location           exact match on jobs.location
+     *   required_education exact match on jobs.required_education
+     *   min_experience     jobs.years_experience <= this many (a candidate with N years
+     *                      qualifies for postings requiring N or fewer)
+     */
+    public static function search(array $params): array
+    {
+        $sql = 'SELECT j.*, e.company_name
+                FROM jobs j LEFT JOIN employers e ON e.user_id = j.employer_id
+                WHERE 1 = 1';
+        $args = [];
+
+        if (!empty($params['work_mode'])) {
+            $sql   .= ' AND j.work_mode = ?';
+            $args[] = $params['work_mode'];
+        }
+        if (!empty($params['location'])) {
+            $sql   .= ' AND j.location = ?';
+            $args[] = $params['location'];
+        }
+        if (!empty($params['required_education'])) {
+            $sql   .= ' AND j.required_education = ?';
+            $args[] = $params['required_education'];
+        }
+        if (isset($params['min_experience']) && $params['min_experience'] !== '') {
+            $sql   .= ' AND j.years_experience <= ?';
+            $args[] = (int) $params['min_experience'];
+        }
+        $sql .= ' ORDER BY j.created_at DESC';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($args);
+        $rows = $stmt->fetchAll();
+
+        $keyword = trim((string) ($params['keyword'] ?? ''));
+        if ($keyword === '') {
+            return $rows;
+        }
+
+        $scored = [];
+        foreach ($rows as $row) {
+            $haystack = ($row['title'] ?? '') . ' '
+                      . ($row['description'] ?? '') . ' '
+                      . ($row['required_skills'] ?? '');
+            if (!Fuzzy::matches($haystack, $keyword)) {
+                continue;
+            }
+            $scored[] = ['row' => $row, 'score' => Fuzzy::score($haystack, $keyword)];
+        }
+
+        usort($scored, static fn ($a, $b) => $b['score'] <=> $a['score']);
+        return array_map(static fn ($s) => $s['row'], $scored);
     }
 }
